@@ -9,11 +9,11 @@ namespace AcTrie.Test
     {
         protected abstract IDictionary<string, int> Create();
         [Property]
-        public bool Get_GivenASetValue_GetsThatValue(NonEmptyString key, int value)
+        public void Get_GivenASetValue_GetsThatValue(NonEmptyString key, int value)
         {
             var trie = Create();
             trie[key.Get] = value;
-            return trie[key.Get] == value;
+            trie[key.Get].Should().Be(value);
         }
 
         [Property]

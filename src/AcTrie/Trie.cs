@@ -5,7 +5,7 @@ using System.Linq;
 
 namespace AcTrie
 {
-    public class Trie<TValue> : IDictionary<string, TValue>
+    public class Trie<TValue> : IDictionary<string, TValue> where TValue : struct
     {
         private readonly IDictionary<char, Edge> _edges = new Dictionary<char, Edge>();
         public TValue? Value { get; set; }
@@ -19,12 +19,12 @@ namespace AcTrie
 
         public bool IsReadOnly => false;
 
-        public bool TryGetValue(string key, out TValue? value)
+        public bool TryGetValue(string key, out TValue value)
         {
             var node = FindNode(key);
-            if (node is not null && node.Value is not null)
+            if (node?.Value is not null)
             {
-                value = node.Value;
+                value = (TValue)node.Value;
                 return true;
             }
 
@@ -33,9 +33,9 @@ namespace AcTrie
             return false;
         }
 
-        public ICollection<string> Keys => ((IEnumerable<KeyValuePair<string, TValue>>) this).Select(kv => kv.Key).ToList();
+        public ICollection<string> Keys => this.Select(kv => kv.Key).ToList();
 
-        public ICollection<TValue> Values => ((IEnumerable<KeyValuePair<string, TValue>>) this).Select(kv => kv.Value).ToList();
+        public ICollection<TValue> Values => this.Select(kv => kv.Value).ToList();
 
         public TValue this[string key]
         {
@@ -57,6 +57,7 @@ namespace AcTrie
                 if (remainder.Length == 0)
                 {
                     node.Value = value;
+                    return;
                 }
 
                 // There is no further progress to made in this key
@@ -70,7 +71,7 @@ namespace AcTrie
             return FindNode(key) is not null;
         }
 
-        public bool RemoveImpl(string key, TValue? value = default, bool checkValue = false)
+        public bool RemoveImpl(string key, TValue? value = null)
         {
             if (key.Length == 0) throw new KeyNotFoundException("");
             IList<Step> path = WalkPath(key).ToList();
@@ -86,7 +87,7 @@ namespace AcTrie
             // There is no node with this key
             if (target.Value is null) return false;
 
-            if (value is not null && checkValue && !target.Value.Equals(value)) return false;
+            if (value is not null && !target.Value.Equals(value)) return false;
 
             // target is the node to be deleted
             var last = path[-1];
@@ -112,7 +113,7 @@ namespace AcTrie
 
         public bool Remove(KeyValuePair<string, TValue> item)
         {
-            return RemoveImpl(item.Key, item.Value, true);
+            return RemoveImpl(item.Key, item.Value);
         }
 
         public int Count
@@ -154,9 +155,7 @@ namespace AcTrie
         public bool Contains(KeyValuePair<string, TValue> item)
         {
             var node = FindNode(item.Key);
-            return node is not null &&
-                   node.Value is not null &&
-                   node.Value.Equals(item);
+            return node?.Value is not null && node.Value.Equals(item);
         }
 
         public void CopyTo(KeyValuePair<string, TValue>[] array, int arrayIndex)
@@ -169,7 +168,7 @@ namespace AcTrie
 
         public (TValue?, string) ConsumeLongestPrefix(string key)
         {
-            TValue? value = default;
+            TValue? value = null;
             var valueKey = key;
             foreach (var (remainder, target) in WalkPath(key))
             {
@@ -276,7 +275,7 @@ namespace AcTrie
                 var head = $"{c}{keyTail}";
                 if (target.Value is not null)
                 {
-                    yield return new KeyValuePair<string, TValue>(head, target.Value);
+                    yield return new KeyValuePair<string, TValue>(head, (TValue) target.Value);
                 }
 
                 foreach (var (name, value) in target)
@@ -350,7 +349,7 @@ namespace AcTrie
             );
         }
 
-        private IList<Step> Trim(IList<Step> path)
+        private static IList<Step> Trim(IList<Step> path)
         {
             if (path.Count <= 0)
             {
@@ -393,7 +392,7 @@ namespace AcTrie
             return path;
         }
 
-        private void Compress(IList<Step> path)
+        private static void Compress(IList<Step> path)
         {
             if (path.Count <= 0)
             {

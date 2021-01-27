@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using FluentAssertions;
 using FsCheck;
 using FsCheck.Xunit;
 
@@ -12,10 +13,10 @@ namespace AcTrie.Test
         }
 
         [Property]
-        public bool ConsumeLongestPrefix_ForAnEmptyTrie_ReturnsOriginalString(NonEmptyString text)
+        public void ConsumeLongestPrefix_ForAnEmptyTrie_ReturnsOriginalString(NonEmptyString text)
         {
             var trie = new Trie<int>();
-            return trie.ConsumeLongestPrefix(text.Get) == (null, text.Get);
+            trie.ConsumeLongestPrefix(text.Get).Should().Be((null, text.Get));
         }
 
         [Property]
