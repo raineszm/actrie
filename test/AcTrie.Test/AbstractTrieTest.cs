@@ -1,12 +1,13 @@
+using System.Collections.Generic;
 using FluentAssertions;
 using FsCheck;
 using FsCheck.Xunit;
 
 namespace AcTrie.Test
 {
-    public abstract class ITrieTest
+    public abstract class AbstractTrieTest
     {
-        protected abstract ITrie<char, int> Create();
+        protected abstract IDictionary<string, int> Create();
         [Property]
         public bool Get_GivenASetValue_GetsThatValue(NonEmptyString key, int value)
         {

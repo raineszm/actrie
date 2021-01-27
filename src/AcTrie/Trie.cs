@@ -3,9 +3,9 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace AcTrie.Trie
+namespace AcTrie
 {
-    public class Trie<TValue> : ITrie<char, TValue>, IDictionary<string, TValue>
+    public class Trie<TValue> : IDictionary<string, TValue>
     {
         private readonly IDictionary<char, Edge> _edges = new Dictionary<char, Edge>();
         public TValue? Value { get; set; }
@@ -16,17 +16,6 @@ namespace AcTrie.Trie
         {
             Value = value;
         }
-
-        private static string StringKey(IEnumerable<char> key)
-        {
-            if (key is string keyIsString)
-            {
-                return keyIsString;
-            }
-
-            return string.Join("", key);
-        }
-
 
         public bool IsReadOnly => false;
 
@@ -45,8 +34,6 @@ namespace AcTrie.Trie
         }
 
         public ICollection<string> Keys => ((IEnumerable<KeyValuePair<string, TValue>>) this).Select(kv => kv.Key).ToList();
-
-        ICollection<IEnumerable<char>> IDictionary<IEnumerable<char>, TValue>.Keys => Keys.Select(s => s.AsEnumerable()).ToList();
 
         public ICollection<TValue> Values => ((IEnumerable<KeyValuePair<string, TValue>>) this).Select(kv => kv.Value).ToList();
 
@@ -78,25 +65,9 @@ namespace AcTrie.Trie
             }
         }
 
-        public bool TryGetValue(IEnumerable<char> key, out TValue value)
-        {
-            throw new NotImplementedException();
-        }
-
-        public TValue this[IEnumerable<char> key]
-        {
-            get => this[StringKey(key)];
-            set => this[StringKey(key)] = value;
-        }
-
         public bool ContainsKey(string key)
         {
             return FindNode(key) is not null;
-        }
-
-        public bool ContainsKey(IEnumerable<char> key)
-        {
-            return ContainsKey(StringKey(key));
         }
 
         public bool RemoveImpl(string key, TValue? value = default, bool checkValue = false)
@@ -139,19 +110,9 @@ namespace AcTrie.Trie
         }
 
 
-        public bool Remove(IEnumerable<char> key)
-        {
-            return Remove(StringKey(key));
-        }
-
         public bool Remove(KeyValuePair<string, TValue> item)
         {
             return RemoveImpl(item.Key, item.Value, true);
-        }
-
-        public bool Remove(KeyValuePair<IEnumerable<char>, TValue> item)
-        {
-            return Remove(new KeyValuePair<string, TValue>(StringKey(item.Key), item.Value));
         }
 
         public int Count
@@ -185,18 +146,7 @@ namespace AcTrie.Trie
             this[key] = value;
         }
 
-        public void Add(IEnumerable<char> key, TValue value)
-        {
-            this[key] = value;
-        }
-
-
         public void Add(KeyValuePair<string, TValue> item)
-        {
-            Add(item.Key, item.Value);
-        }
-
-        public void Add(KeyValuePair<IEnumerable<char>, TValue> item)
         {
             Add(item.Key, item.Value);
         }
@@ -207,16 +157,6 @@ namespace AcTrie.Trie
             return node is not null &&
                    node.Value is not null &&
                    node.Value.Equals(item);
-        }
-
-        public bool Contains(KeyValuePair<IEnumerable<char>, TValue> item)
-        {
-            return Contains(new KeyValuePair<string, TValue>(StringKey(item.Key), item.Value));
-        }
-
-        public void CopyTo(KeyValuePair<IEnumerable<char>, TValue>[] array, int arrayIndex)
-        {
-            CopyTo(array.Select((kv => new KeyValuePair<string,TValue>(StringKey(kv.Key), kv.Value))).ToArray(), arrayIndex);
         }
 
         public void CopyTo(KeyValuePair<string, TValue>[] array, int arrayIndex)
@@ -329,14 +269,6 @@ namespace AcTrie.Trie
         }
 
 
-        IEnumerator<KeyValuePair<IEnumerable<char>, TValue>> IEnumerable<KeyValuePair<IEnumerable<char>, TValue>>.GetEnumerator()
-        {
-            foreach ((string key, var value) in this)
-            {
-                yield return new KeyValuePair<IEnumerable<char>, TValue>(key, value);
-            }
-        }
-
         public IEnumerator<KeyValuePair<string, TValue>> GetEnumerator()
         {
             foreach (var (c, (keyTail, target)) in _edges)
@@ -352,6 +284,11 @@ namespace AcTrie.Trie
                     yield return new KeyValuePair<string, TValue>($"{head}{name}", value);
                 }
             }
+        }
+        
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator();
         }
 
         private void Split(char c, string rest, Trie<TValue> node)
@@ -524,9 +461,5 @@ namespace AcTrie.Trie
             }
         }
 
-        IEnumerator IEnumerable.GetEnumerator()
-        {
-            return GetEnumerator();
-        }
     }
 }

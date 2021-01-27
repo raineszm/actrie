@@ -1,12 +1,12 @@
+using System.Collections.Generic;
 using FsCheck;
 using FsCheck.Xunit;
-using AcTrie.Trie;
 
 namespace AcTrie.Test
 {
-    public class TrieTest : ITrieTest
+    public class TrieTest : AbstractTrieTest
     {
-        protected override ITrie<char, int> Create()
+        protected override IDictionary<string, int> Create()
         {
             return new Trie<int>();
         }
