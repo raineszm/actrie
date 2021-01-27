@@ -1,5 +1,6 @@
 using FsCheck;
 using FsCheck.Xunit;
+using AcTrie.Trie;
 
 namespace AcTrie.Test
 {
