@@ -257,6 +257,8 @@ namespace AcTrie.Trie
 
             var i = edge.KeyTail.Length;
 
+            if (i >= key.Length - 1) return null;
+            
             // First letter matches but the full edge does not
             if (key.Substring(1, 1 + i) != edge.KeyTail) return null;
 
@@ -477,11 +479,6 @@ namespace AcTrie.Trie
                 }
             }
 
-            if (toCompress.Count == 0)
-            {
-                return;
-            }
-
             if (toCompress.Count <= 0)
             {
                 throw new ArgumentException("attempted to compress empty path");
@@ -533,28 +530,3 @@ namespace AcTrie.Trie
         }
     }
 }
-//
-// export class Trie<T> implements Mapping<string, T> {
-//
-//   constructor(public value?: T) {}
-//
-//
-//   *[Symbol.iterator](): IterableIterator<[string, T]> {
-//     for (const [c, { keyTail, target }] of this.edges.entries()) {
-//       const base = `${c}${keyTail}`;
-//       if (target.value !== undefined) {
-//         yield [base, target.value];
-//       }
-//       for (const [name, value] of target) {
-//         yield [`${base}${name}`, value];
-//       }
-//     }
-//   }
-//
-//
-//
-//
-//
-//
-//
-// }

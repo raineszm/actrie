@@ -7,51 +7,51 @@ namespace AcTrie.Test
     public abstract class ITrieTest
     {
         protected abstract ITrie<char, int> Create();
-        [Property(StartSize = 1)]
-        public bool Get_GivenASetValue_GetsThatValue(string key, int value)
+        [Property]
+        public bool Get_GivenASetValue_GetsThatValue(NonEmptyString key, int value)
         {
             var trie = Create();
-            trie[key] = value;
-            return trie[key] == value;
+            trie[key.Get] = value;
+            return trie[key.Get] == value;
         }
 
-        [Property(StartSize = 1)]
+        [Property]
         public Property Set_GivenMultipleKeys_CanAddThem(int value, int value2)
         {
             var trie = Create();
-            return Prop.ForAll<string, string>((key, key2) =>
+            return Prop.ForAll<NonEmptyString, NonEmptyString>((key, key2) =>
             {
-                trie[key] = value;
-                trie[key2] = value2;
+                trie[key.Get] = value;
+                trie[key2.Get] = value2;
                 return
-                    (trie[key] == value && trie[key2] == value2)
-                    .When(key != key2);
+                    (trie[key.Get] == value && trie[key2.Get] == value2)
+                    .When(key.Get != key2.Get);
             });
         }
 
-        [Property(StartSize = 1)]
-        public void ContainsKey_GivenAKey_ReturnsWhetherKeyIsInTrie(string key, int value)
+        [Property]
+        public void ContainsKey_GivenAKey_ReturnsWhetherKeyIsInTrie(NonEmptyString key, int value)
         {
             var trie = Create();
-            trie.ContainsKey(key).Should().BeFalse();
-            trie[key] = value;
-            trie.ContainsKey(key).Should().BeTrue();
+            trie.ContainsKey(key.Get).Should().BeFalse();
+            trie[key.Get] = value;
+            trie.ContainsKey(key.Get).Should().BeTrue();
         }
 
-        [Property(StartSize = 1)]
-        public bool Remove_GivenAnEmptyTrie_CannotRemoveFromIt(string key)
+        [Property]
+        public bool Remove_GivenAnEmptyTrie_CannotRemoveFromIt(NonEmptyString key)
         {
             var trie = Create();
-            return !trie.Remove(key);
+            return !trie.Remove(key.Get);
         }
         
-        [Property(StartSize = 1)]
-        public bool Remove_GivenAKeyInTrie_RemovesIt(string key, int value)
+        [Property]
+        public bool Remove_GivenAKeyInTrie_RemovesIt(NonEmptyString key, int value)
         {
             var trie = Create();
-            trie[key] = value;
-            trie.Remove(key);
-            return !trie.ContainsKey(key);
+            trie[key.Get] = value;
+            trie.Remove(key.Get);
+            return !trie.ContainsKey(key.Get);
         }
     }
 }
