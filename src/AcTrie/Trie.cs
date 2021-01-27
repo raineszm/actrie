@@ -1,6 +1,9 @@
+using System.Collections;
+using System.Collections.Generic;
+
 namespace AcTrie
 {
-    public class Trie
+    public class Trie<TValue> : ITrie<char, TValue>
     {
 //         import { Mapping } from './mapping';
 //
@@ -385,5 +388,76 @@ namespace AcTrie
 //   }
 // }
 //
+        public IEnumerator<KeyValuePair<IEnumerable<char>, TValue>> GetEnumerator()
+        {
+            throw new System.NotImplementedException();
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator();
+        }
+
+        public void Add(KeyValuePair<IEnumerable<char>, TValue> item)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public void Clear()
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public bool Contains(KeyValuePair<IEnumerable<char>, TValue> item)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public void CopyTo(KeyValuePair<IEnumerable<char>, TValue>[] array, int arrayIndex)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public bool Remove(KeyValuePair<IEnumerable<char>, TValue> item)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public int Count { get; }
+        public bool IsReadOnly { get; }
+
+        public void Add(IEnumerable<char> key, TValue value)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public bool ContainsKey(IEnumerable<char> key)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public bool Remove(IEnumerable<char> key)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public bool TryGetValue(IEnumerable<char> key, out TValue value)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public TValue this[IEnumerable<char> key]
+        {
+            get => throw new System.NotImplementedException();
+            set => throw new System.NotImplementedException();
+        }
+
+        public ICollection<IEnumerable<char>> Keys { get; }
+        public ICollection<TValue> Values { get; }
+
+        public (TValue?, string) ConsumeLongestPrefix(string text)
+        {
+            throw new System.NotImplementedException();
+        }
     }
 }
