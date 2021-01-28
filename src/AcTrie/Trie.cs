@@ -9,8 +9,10 @@ namespace AcTrie
     {
         private readonly IDictionary<char, Edge> _edges = new Dictionary<char, Edge>();
         public TValue? Value { get; set; }
-        
-        public Trie() {}
+
+        public Trie()
+        {
+        }
 
         public Trie(TValue value)
         {
@@ -24,7 +26,7 @@ namespace AcTrie
             var node = FindNode(key);
             if (node?.Value is not null)
             {
-                value = (TValue)node.Value;
+                value = (TValue) node.Value;
                 return true;
             }
 
@@ -73,30 +75,34 @@ namespace AcTrie
 
         public bool RemoveImpl(string key, TValue? value = null)
         {
-            if (key.Length == 0) throw new KeyNotFoundException("");
+            if (key.Length == 0) return false;
             IList<Step> path = WalkPath(key).ToList();
 
-            var (remainder, target) = path[-1];
+            // Path always returns a non-empty array
+            // We walk up the tree backwards from the target node
+            var (remainder, target) = path[^1];
+            path.RemoveAt(path.Count - 1);
 
             // Target node not found
             if (remainder.Length > 0) return false;
 
-            path.RemoveAt(-1);
-            // We walk up the tree backwards from the target node
-
             // There is no node with this key
             if (target.Value is null) return false;
 
+            // If we need to check value do that here
+            // For the ICollection implementation
             if (value is not null && !target.Value.Equals(value)) return false;
 
             // target is the node to be deleted
-            var last = path[-1];
 
-            // target is a child of this node
-            if (last is null)
+            // target is a child of `this` node
+            if (path.Count == 0)
             {
                 return RemoveChild(key);
             }
+
+            // get for its parent
+            var last = path[^1];
 
             var (edgeFromParent, parent) = last;
             var result = parent.RemoveChild(edgeFromParent);
@@ -104,7 +110,7 @@ namespace AcTrie
             Compress(path);
             return result;
         }
-        
+
         public bool Remove(string key)
         {
             return RemoveImpl(key);
@@ -196,10 +202,8 @@ namespace AcTrie
 
             var i = edge.KeyTail.Length;
 
-            if (i >= key.Length - 1) return null;
-            
             // First letter matches but the full edge does not
-            if (key.Substring(1, 1 + i) != edge.KeyTail) return null;
+            if (key.Substring(1, i) != edge.KeyTail) return null;
 
             // Strip off the consumed characters and return remaining key
             // and matched node
@@ -284,7 +288,7 @@ namespace AcTrie
                 }
             }
         }
-        
+
         IEnumerator IEnumerable.GetEnumerator()
         {
             return GetEnumerator();
@@ -357,8 +361,8 @@ namespace AcTrie
             }
 
             // Pull out the parent of the removed node
-            var (remainder, target) = path[-1];
-            path.RemoveAt(-1);
+            var (remainder, target) = path[^1];
+            path.RemoveAt(path.Count - 1);
 
             // if path is empty it means that node is the root, i.e. self
             // Since we can't delete self, we're done
@@ -376,11 +380,11 @@ namespace AcTrie
                 target.Value is not null
             )
             {
-                var (edgeFromParent, parent) = path[-1];
+                var (edgeFromParent, parent) = path[^1];
                 parent.RemoveChild(
-                    edgeFromParent.Substring(-remainder.Length)
+                    edgeFromParent.Substring(edgeFromParent.Length - remainder.Length)
                 );
-                path.RemoveAt(-1);
+                path.RemoveAt(path.Count - 1);
 
                 remainder = edgeFromParent;
                 target = parent;
@@ -399,8 +403,8 @@ namespace AcTrie
                 throw new ArgumentException("attempted to compress empty path");
             }
 
-            var (key, node) = path[-1];
-            path.RemoveAt(-1);
+            var (key, node) = path[^1];
+            path.RemoveAt(path.Count - 1);
 
             var toCompress = new List<Step>();
             foreach (var x in path.Reverse())
@@ -417,18 +421,18 @@ namespace AcTrie
 
             if (toCompress.Count <= 0)
             {
-                throw new ArgumentException("attempted to compress empty path");
+                return;
             }
 
-            var (edgeFromParent, parent) = toCompress[-1];
-            path.RemoveAt(-1);
+            var (edgeFromParent, parent) = toCompress[^1];
+            path.RemoveAt(path.Count - 1);
             var keyTail = $"{string.Join("", toCompress.AsEnumerable().Reverse().Select(x => x.Remainder))}{key}";
             var newKey = edgeFromParent.Substring(
                 0,
-                -keyTail.Length
+                edgeFromParent.Length - keyTail.Length
             );
             parent.RemoveChild(
-                edgeFromParent.Substring(0, -key.Length)
+                edgeFromParent.Substring(0, edgeFromParent.Length - key.Length)
             );
             parent.AddChild(newKey, node);
         }
@@ -459,6 +463,5 @@ namespace AcTrie
                 yield return step;
             }
         }
-
     }
 }

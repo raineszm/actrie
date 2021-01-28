@@ -26,14 +26,14 @@ namespace AcTrie.Test
             return (trie.ConsumeLongestPrefix(text.Get) == (null, text.Get)).When(key.Get != text.Get);
         }
 
-        [Property]
-        public bool ConsumeLongestPrefix_ForFullMatch_ReturnsEmptyString(NonEmptyString text)
+        [Property(Replay = "140881727,296846848")]
+        public void ConsumeLongestPrefix_ForFullMatch_ReturnsEmptyString(NonEmptyString text)
         {
             var trie = new Trie<int>
             {
                 [text.Get] = 1
             };
-            return trie.ConsumeLongestPrefix(text.Get) == (1, "");
+            trie.ConsumeLongestPrefix(text.Get).Should().Be((1, ""));
         }
         
         
@@ -51,7 +51,7 @@ namespace AcTrie.Test
                 {
                     [text.Substring(0, i)] = value
                 };
-                return trie.ConsumeLongestPrefix(text) == (1, text.Substring(i));
+                trie.ConsumeLongestPrefix(text).Should().Be((value, text.Substring(i)));
             });
         }
 
