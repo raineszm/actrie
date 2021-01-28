@@ -1,116 +1,194 @@
+using System.Collections.Generic;
+using System.Linq;
+using FsCheck;
+using FsCheck.Xunit;
+
 namespace AcTrie.Test
 {
-    public class TrieModelTest
+    public class TrieModelTest : ICommandGenerator<Trie<int>, IDictionary<string, int>>
     {
-//         import * as fc from 'fast-check';
-// import { Trie } from '../src/trie';
-//
-// type TrieModel<T> = Map<string, T>;
-//
-// class SetCommand implements fc.Command<TrieModel<number>, Trie<number>> {
-//   constructor(readonly key: string, readonly value: number) {}
-//
-//   check = (): boolean => true;
-//
-//   run(model: TrieModel<number>, trie: Trie<number>): void {
-//     trie.set(this.key, this.value);
-//     model.set(this.key, this.value);
-//   }
-//
-//   toString(): string {
-//     return `set("${this.key}", ${this.value})`;
-//   }
-// }
-//
-// class DeleteCommand implements fc.Command<TrieModel<number>, Trie<number>> {
-//   constructor(readonly key: string) {}
-//
-//   check(model: TrieModel<number>): boolean {
-//     return model.size > 0;
-//   }
-//
-//   run(model: TrieModel<number>, trie: Trie<number>): void {
-//     // eslint-disable-next-line jest/no-standalone-expect
-//     expect(trie.delete(this.key)).toBe(model.delete(this.key));
-//   }
-//
-//   toString(): string {
-//     return `delete("${this.key}")`;
-//   }
-// }
-//
-// class GetCommand implements fc.Command<TrieModel<number>, Trie<number>> {
-//   constructor(readonly key: string) {}
-//   check(model: TrieModel<number>): boolean {
-//     return model.size > 0;
-//   }
-//
-//   run(model: TrieModel<number>, trie: Trie<number>): void {
-//     const got = trie.get(this.key);
-//     // eslint-disable-next-line jest/no-standalone-expect
-//     expect(got).toBe(model.get(this.key));
-//   }
-//
-//   toString(): string {
-//     return `get("${this.key}")`;
-//   }
-// }
-//
-// class SizeCommand implements fc.Command<TrieModel<number>, Trie<number>> {
-//   check = (): boolean => true;
-//
-//   run(model: TrieModel<number>, trie: Trie<number>): void {
-//     // eslint-disable-next-line jest/no-standalone-expect
-//     expect(trie.size).toBe(model.size);
-//   }
-//
-//   toString = (): string => 'size()';
-// }
-//
-// class LeavesCommand implements fc.Command<TrieModel<number>, Trie<number>> {
-//   check = (model: TrieModel<number>): boolean => model.size > 0;
-//
-//   run(_model: TrieModel<number>, trie: Trie<number>): void {
-//     const leaves = Array.from(trie.leaves());
-//     // eslint-disable-next-line jest/no-standalone-expect
-//     expect(
-//       leaves.every((node) => node.value !== undefined || node !== trie),
-//     ).toBeTruthy();
-//   }
-//
-//   toString = (): string => 'leaves()';
-// }
-//
-// const keyArb = fc.string({ minLength: 1 });
-// const trieCommands = [
-//   fc.constant(new SizeCommand()),
-//   fc.constant(new LeavesCommand()),
-//   keyArb.map((key) => new GetCommand(key)),
-//   keyArb.map((key) => new DeleteCommand(key)),
-//   fc
-//     .tuple(keyArb, fc.integer())
-//     .map(([key, value]) => new SetCommand(key, value)),
-// ];
-//
-// describe('trie', () => {
-//   // eslint-disable-next-line jest/expect-expect
-//   it('passes model test', () => {
-//     fc.assert(
-//       fc.property(
-//         fc.commands(trieCommands, {
-//           maxCommands: 100,
-//         }),
-//         (cmds) => {
-//           const s = (): { model: TrieModel<number>; real: Trie<number> } => ({
-//             model: new Map<string, number>(),
-//             real: new Trie<number>(),
-//           });
-//           fc.modelRun(s, cmds);
-//         },
-//       ),
-//     );
-//   });
-// });
-//
+        public Gen<Command<Trie<int>, IDictionary<string, int>>> Next(IDictionary<string, int> model)
+        {
+            return Arb.Generate<NonEmptyString>().Zip(Arb.Generate<int>(), (key, value) =>
+            {
+                return new Command<Trie<int>, IDictionary<string, int>>[]
+                {
+                    new SizeCommand(),
+                    new LeavesCommand(),
+                    new GetCommand(key.Get),
+                    new SetCommand(key.Get, value),
+                    new DeleteCommand(key.Get),
+                };
+            }).SelectMany(Gen.Elements);
+        }
+
+        public Trie<int> InitialActual => new Trie<int>();
+        public IDictionary<string, int> InitialModel => new Dictionary<string, int>();
+
+        public class SetCommand : Command<Trie<int>, IDictionary<string, int>>
+        {
+            public readonly string Key;
+            public readonly int Value;
+
+            public SetCommand(string key, int value)
+            {
+                Key = key;
+                Value = value;
+            }
+
+
+            public override Trie<int> RunActual(Trie<int> trie)
+            {
+                trie[Key] = Value;
+                return trie;
+            }
+
+            public override IDictionary<string, int> RunModel(IDictionary<string, int> dict)
+            {
+                dict[Key] = Value;
+                return dict;
+            }
+
+            public override string ToString()
+            {
+                return $"Set('{Key}', {Value})";
+            }
+        }
+
+        public class DeleteCommand : Command<Trie<int>, IDictionary<string, int>>
+        {
+            public readonly string Key;
+            private bool _trieRemoved;
+            private bool _dictRemoved;
+
+            public DeleteCommand(string key)
+            {
+                Key = key;
+            }
+
+            public override bool Pre(IDictionary<string, int> dict)
+            {
+                return dict.Count > 0;
+            }
+
+            public override Trie<int> RunActual(Trie<int> trie)
+            {
+                _trieRemoved = trie.Remove(Key);
+                return trie;
+            }
+
+            public override IDictionary<string, int> RunModel(IDictionary<string, int> dict)
+            {
+                _dictRemoved = dict.Remove(Key);
+                return dict;
+            }
+
+            public override Property Post(Trie<int> trie, IDictionary<string, int> dict)
+            {
+                return (_trieRemoved == _dictRemoved).ToProperty();
+            }
+
+            public override string ToString()
+            {
+                return $"Delete('{Key}')";
+            }
+        }
+
+        public class GetCommand : Command<Trie<int>, IDictionary<string, int>>
+        {
+            public readonly string Key;
+            private int _trieGot;
+            private int _dictGot;
+            private bool _trieSuccess;
+            private bool _dictSuccess;
+
+            public GetCommand(string key)
+            {
+                Key = key;
+            }
+
+            public override bool Pre(IDictionary<string, int> dict)
+            {
+                return dict.Count > 0 && base.Pre(dict);
+            }
+
+            public override Trie<int> RunActual(Trie<int> trie)
+            {
+                _trieSuccess = trie.TryGetValue(Key, out _trieGot);
+                return trie;
+            }
+
+            public override IDictionary<string, int> RunModel(IDictionary<string, int> dict)
+            {
+                _dictSuccess = dict.TryGetValue(Key, out _dictGot);
+                return dict;
+            }
+
+            public override Property Post(Trie<int> trie, IDictionary<string, int> dict)
+            {
+                return (_trieSuccess == _dictSuccess && _trieGot == _dictGot).ToProperty();
+            }
+
+            public override string ToString()
+            {
+                return $"Get('{Key}')";
+            }
+        }
+
+        public class SizeCommand : Command<Trie<int>, IDictionary<string, int>>
+        {
+            public override Trie<int> RunActual(Trie<int> trie)
+            {
+                return trie;
+            }
+
+            public override IDictionary<string, int> RunModel(IDictionary<string, int> dict)
+            {
+                return dict;
+            }
+
+            public override Property Post(Trie<int> trie, IDictionary<string, int> model)
+            {
+                return (trie.Count == model.Count).ToProperty();
+            }
+
+            public override string ToString() => "Size()";
+        }
+
+        public class LeavesCommand : Command<Trie<int>, IDictionary<string, int>>
+        {
+            public override bool Pre(IDictionary<string, int> dict)
+            {
+                return dict.Count > 0;
+            }
+
+            public override Trie<int> RunActual(Trie<int> trie)
+            {
+                return trie;
+            }
+
+
+            public override IDictionary<string, int> RunModel(IDictionary<string, int> dict)
+            {
+                return dict;
+            }
+
+
+            public override Property Post(Trie<int> trie, IDictionary<string, int> _)
+            {
+                return trie.Leaves().All(x => x.Value is not null || x != trie).ToProperty();
+            }
+
+            public override string ToString()
+            {
+                return "Leaves()";
+            }
+        }
+
+        [Property]
+        public Property Run()
+        {
+           return new TrieModelTest().ToProperty(); 
+        }
     }
 }

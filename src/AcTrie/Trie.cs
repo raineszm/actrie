@@ -132,13 +132,7 @@ namespace AcTrie
                     total++;
                 }
 
-                if (_edges.Count <= 0) return total;
-                foreach (var (_, target) in _edges.Values)
-                {
-                    total += target.Count;
-                }
-
-                return total;
+                return total + _edges.Values.Sum(edge => edge.Target.Count);
             }
         }
 
