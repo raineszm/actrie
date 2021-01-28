@@ -201,6 +201,9 @@ namespace AcTrie
             }
 
             var i = edge.KeyTail.Length;
+            
+            // No match possible since the edge is longer than our key
+            if (i >= key.Length) return null;
 
             // First letter matches but the full edge does not
             if (key.Substring(1, i) != edge.KeyTail) return null;
