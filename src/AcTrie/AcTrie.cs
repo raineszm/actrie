@@ -1,7 +1,15 @@
+using System.Collections.Generic;
+
 namespace AcTrie
 {
-    public class AcTrie
+    public class AcTrie<TToken, TValue>: IDictionary<IEnumerable<TToken>, TValue> where TValue : struct
     {
+        public class Needle
+        {
+            public int Start;
+            public int End;
+            public TValue Value;
+        }
         // import { Mapping } from './mapping';
         //
         // export interface Indexable<K> {
