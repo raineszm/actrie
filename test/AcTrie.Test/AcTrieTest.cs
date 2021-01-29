@@ -13,11 +13,7 @@ namespace AcTrie.Test
 
         public AcTrieTest()
         {
-            SoarAcTrie = new CITrie();
-            SoarAcTrie.Add("at", 0);
-            SoarAcTrie.Add("art", 1);
-            SoarAcTrie.Add("oars", 2);
-            SoarAcTrie.Add("soar", 3);
+            SoarAcTrie = new CITrie {{"at", 0}, {"art", 1}, {"oars", 2}, {"soar", 3}};
         }
 
         public static IEnumerable<object[]> SearchData()
@@ -83,9 +79,7 @@ namespace AcTrie.Test
         [Fact]
         public void LongestMatch_GivenConflictingPrefixMatchs_ReturnsLongest()
         {
-            var trie = new AcTrie<char, int>();
-            trie.Add("point", 1);
-            trie.Add("conduct", 2);
+            var trie = new AcTrie<char, int> {{"point", 1}, {"conduct", 2}};
             trie.LongestMatch("pconduct").Should().Be(new CINeedle
             {
                 Start = 1,
