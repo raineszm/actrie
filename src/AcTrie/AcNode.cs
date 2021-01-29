@@ -9,11 +9,13 @@ namespace AcTrie
         where TValue : struct
         where TToken : notnull
     {
-        private readonly IDictionary<TToken, AcNode<TToken, TValue>>
-            _children = new Dictionary<TToken, AcNode<TToken, TValue>>();
+        public readonly IDictionary<TToken, AcNode<TToken, TValue>>
+            Children = new Dictionary<TToken, AcNode<TToken, TValue>>();
+
+        public SuffixEdge? Suffix;
 
         public TValue? Value;
-        public SuffixEdge? Suffix;
+        public bool IsLeaf => !Children.Any();
         public bool IsReadOnly => false;
 
         public bool TryGetValue(IEnumerable<TToken> key, out TValue value)
@@ -31,10 +33,7 @@ namespace AcTrie
         {
             get
             {
-                if (!TryGetValue(key, out var value))
-                {
-                    throw new KeyNotFoundException(key.ToString());
-                }
+                if (!TryGetValue(key, out var value)) throw new KeyNotFoundException(key.ToString());
 
                 return value;
             }
@@ -54,12 +53,12 @@ namespace AcTrie
                 return;
             }
 
-            var child = _children[keyList.First()];
+            var child = Children[keyList.First()];
             // If no matching child, create it
             if (child is null)
             {
                 child = new AcNode<TToken, TValue>();
-                _children[keyList.First()] = child;
+                Children[keyList.First()] = child;
             }
 
             child[keyList.Skip(1)] = value;
@@ -68,46 +67,6 @@ namespace AcTrie
         public void Add(KeyValuePair<IEnumerable<TToken>, TValue> item)
         {
             Add(item.Key, item.Value);
-        }
-
-        private bool RemoveImpl(IEnumerable<TToken> key, TValue? value = null)
-        {
-            var keyList = key.ToList();
-
-            if (!keyList.Any()) return false;
-
-            var nodes = IterPath(keyList).ToList();
-            if (nodes.Count < keyList.Count + 1) return false;
-
-            var target = nodes[^1];
-            nodes.RemoveAt(nodes.Count - 1);
-            if (target?.Value is null) return false;
-
-
-            if (value is not null && !value.Equals(target.Value)) return false;
-
-            TrimNodes(keyList, nodes);
-
-            return true;
-        }
-
-        private static void TrimNodes(IReadOnlyList<TToken> keyList, IReadOnlyList<AcNode<TToken, TValue>?> nodes)
-        {
-            for (var i = Math.Min(keyList.Count, nodes.Count) - 1; i >= 0; i--)
-            {
-                var parent = nodes[i];
-                if (parent is null)
-                {
-                    throw new NullReferenceException("accessed a child of an undefined node");
-                }
-
-                var edge = keyList[i];
-                parent._children.Remove(edge);
-                if (parent._children.Count > 0 || parent.Value is not null)
-                {
-                    break;
-                }
-            }
         }
 
         public bool Remove(IEnumerable<TToken> key)
@@ -137,12 +96,9 @@ namespace AcTrie
             get
             {
                 var total = 0;
-                if (Value is not null)
-                {
-                    total++;
-                }
+                if (Value is not null) total++;
 
-                return total + _children.Values.Sum(child => child.Count);
+                return total + Children.Values.Sum(child => child.Count);
             }
         }
 
@@ -150,37 +106,19 @@ namespace AcTrie
         public void Clear()
         {
             Value = null;
-            _children.Clear();
-        }
-
-        public IEnumerable<AcNode<TToken, TValue>> Nodes()
-        {
-            yield return this;
-            foreach (var child in _children.Values)
-            {
-                foreach (var node in child.Nodes())
-                {
-                    yield return node;
-                }
-            }
+            Children.Clear();
         }
 
         public IEnumerator<KeyValuePair<IEnumerable<TToken>, TValue>> GetEnumerator()
         {
             if (Value is not null)
-            {
                 yield return new KeyValuePair<IEnumerable<TToken>, TValue>(Array.Empty<TToken>(), (TValue) Value);
-            }
 
-            foreach (var (c, child) in _children)
-            {
-                foreach (var (k, v) in child)
-                {
-                    yield return new KeyValuePair<IEnumerable<TToken>, TValue>(
-                        new[] {c}.Concat(k), v
-                    );
-                }
-            }
+            foreach (var (c, child) in Children)
+            foreach (var (k, v) in child)
+                yield return new KeyValuePair<IEnumerable<TToken>, TValue>(
+                    new[] {c}.Concat(k), v
+                );
         }
 
         IEnumerator IEnumerable.GetEnumerator()
@@ -191,47 +129,71 @@ namespace AcTrie
         public void CopyTo(KeyValuePair<IEnumerable<TToken>, TValue>[] array, int arrayIndex)
         {
             var i = arrayIndex;
-            foreach (var item in this)
-            {
-                array[i++] = item;
-            }
+            foreach (var item in this) array[i++] = item;
         }
 
         public ICollection<IEnumerable<TToken>> Keys => this.Select(kv => kv.Key).ToList();
         public ICollection<TValue> Values => this.Select(kv => kv.Value).ToList();
+
+        private bool RemoveImpl(IEnumerable<TToken> key, TValue? value = null)
+        {
+            var keyList = key.ToList();
+
+            if (!keyList.Any()) return false;
+
+            var nodes = IterPath(keyList).ToList();
+            if (nodes.Count < keyList.Count + 1) return false;
+
+            var target = nodes[^1];
+            nodes.RemoveAt(nodes.Count - 1);
+            if (target?.Value is null) return false;
+
+
+            if (value is not null && !value.Equals(target.Value)) return false;
+
+            TrimNodes(keyList, nodes);
+
+            return true;
+        }
+
+        private static void TrimNodes(IReadOnlyList<TToken> keyList, IReadOnlyList<AcNode<TToken, TValue>?> nodes)
+        {
+            for (var i = Math.Min(keyList.Count, nodes.Count) - 1; i >= 0; i--)
+            {
+                var parent = nodes[i];
+                if (parent is null) throw new NullReferenceException("accessed a child of an undefined node");
+
+                var edge = keyList[i];
+                parent.Children.Remove(edge);
+                if (parent.Children.Count > 0 || parent.Value is not null) break;
+            }
+        }
+
+        public IEnumerable<AcNode<TToken, TValue>> Nodes()
+        {
+            yield return this;
+            foreach (var child in Children.Values)
+            foreach (var node in child.Nodes())
+                yield return node;
+        }
+
 
         private IEnumerable<AcNode<TToken, TValue>?> IterPath(
             IReadOnlyList<TToken> key
         )
         {
             yield return this;
-            if (!key.Any())
-            {
-                yield break;
-            }
+            if (!key.Any()) yield break;
 
-            var child = _children[key[0]];
+            var child = Children[key[0]];
             if (child is not null)
-            {
                 foreach (var node in child.IterPath(key.Skip(1).ToList()))
-                {
                     yield return node;
-                }
-            }
             else
-            {
                 yield return null;
-            }
         }
 
-        public class Needle
-        {
-            public int Start;
-            public int End;
-            public TValue Value;
-        }
-
-        public class SuffixEdge
+        public record SuffixEdge
         {
             public AcNode<TToken, TValue> Node;
             public int Shift;

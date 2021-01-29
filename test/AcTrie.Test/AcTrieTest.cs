@@ -1,8 +1,9 @@
 using System;
 using System.Collections.Generic;
+using FluentAssertions;
 using Xunit;
 using CITrie = AcTrie.AcTrie<char, int>;
-using CINeedle = AcTrie.AcNode<char, int>.Needle;
+using CINeedle = AcTrie.AcTrie<char, int>.Needle;
 
 namespace AcTrie.Test
 {

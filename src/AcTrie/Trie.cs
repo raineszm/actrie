@@ -8,7 +8,6 @@ namespace AcTrie
     public class Trie<TValue> : IDictionary<string, TValue> where TValue : struct
     {
         private readonly IDictionary<char, Edge> _edges = new Dictionary<char, Edge>();
-        public TValue? Value { get; set; }
 
         public Trie()
         {
@@ -18,6 +17,8 @@ namespace AcTrie
         {
             Value = value;
         }
+
+        public TValue? Value { get; set; }
 
         public bool IsReadOnly => false;
 
@@ -43,10 +44,7 @@ namespace AcTrie
         {
             get
             {
-                if (!TryGetValue(key, out var value))
-                {
-                    throw new KeyNotFoundException(key);
-                }
+                if (!TryGetValue(key, out var value)) throw new KeyNotFoundException(key);
 
                 return value;
             }
@@ -73,44 +71,6 @@ namespace AcTrie
             return FindNode(key) is not null;
         }
 
-        public bool RemoveImpl(string key, TValue? value = null)
-        {
-            if (key.Length == 0) return false;
-            IList<Step> path = WalkPath(key).ToList();
-
-            // Path always returns a non-empty array
-            // We walk up the tree backwards from the target node
-            var (remainder, target) = path[^1];
-            path.RemoveAt(path.Count - 1);
-
-            // Target node not found
-            if (remainder.Length > 0) return false;
-
-            // There is no node with this key
-            if (target.Value is null) return false;
-
-            // If we need to check value do that here
-            // For the ICollection implementation
-            if (value is not null && !target.Value.Equals(value)) return false;
-
-            // target is the node to be deleted
-
-            // target is a child of `this` node
-            if (path.Count == 0)
-            {
-                return RemoveChild(key);
-            }
-
-            // get for its parent
-            var last = path[^1];
-
-            var (edgeFromParent, parent) = last;
-            var result = parent.RemoveChild(edgeFromParent);
-            path = Trim(path);
-            Compress(path);
-            return result;
-        }
-
         public bool Remove(string key)
         {
             return RemoveImpl(key);
@@ -127,10 +87,7 @@ namespace AcTrie
             get
             {
                 var total = 0;
-                if (Value is not null)
-                {
-                    total++;
-                }
+                if (Value is not null) total++;
 
                 return total + _edges.Values.Sum(edge => edge.Target.Count);
             }
@@ -160,10 +117,61 @@ namespace AcTrie
 
         public void CopyTo(KeyValuePair<string, TValue>[] array, int arrayIndex)
         {
-            foreach (var kv in this)
+            foreach (var kv in this) array[arrayIndex++] = kv;
+        }
+
+
+        public IEnumerator<KeyValuePair<string, TValue>> GetEnumerator()
+        {
+            foreach (var (c, (keyTail, target)) in _edges)
             {
-                array[arrayIndex++] = kv;
+                var head = $"{c}{keyTail}";
+                if (target.Value is not null)
+                    yield return new KeyValuePair<string, TValue>(head, (TValue) target.Value);
+
+                foreach (var (name, value) in target)
+                    yield return new KeyValuePair<string, TValue>($"{head}{name}", value);
             }
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator();
+        }
+
+        public bool RemoveImpl(string key, TValue? value = null)
+        {
+            if (key.Length == 0) return false;
+            IList<Step> path = WalkPath(key).ToList();
+
+            // Path always returns a non-empty array
+            // We walk up the tree backwards from the target node
+            var (remainder, target) = path[^1];
+            path.RemoveAt(path.Count - 1);
+
+            // Target node not found
+            if (remainder.Length > 0) return false;
+
+            // There is no node with this key
+            if (target.Value is null) return false;
+
+            // If we need to check value do that here
+            // For the ICollection implementation
+            if (value is not null && !target.Value.Equals(value)) return false;
+
+            // target is the node to be deleted
+
+            // target is a child of `this` node
+            if (path.Count == 0) return RemoveChild(key);
+
+            // get for its parent
+            var last = path[^1];
+
+            var (edgeFromParent, parent) = last;
+            var result = parent.RemoveChild(edgeFromParent);
+            path = Trim(path);
+            Compress(path);
+            return result;
         }
 
         public (TValue?, string) ConsumeLongestPrefix(string key)
@@ -189,13 +197,10 @@ namespace AcTrie
             var c = key[0];
 
             // No matching edge
-            if (!_edges.TryGetValue(c, out var edge))
-            {
-                return null;
-            }
+            if (!_edges.TryGetValue(c, out var edge)) return null;
 
             var i = edge.KeyTail.Length;
-            
+
             // No match possible since the edge is longer than our key
             if (i >= key.Length) return null;
 
@@ -212,10 +217,7 @@ namespace AcTrie
             var c = key[0];
             var keyTail = key.Substring(1);
 
-            if (!_edges.ContainsKey(c))
-            {
-                _edges.Add(c, new Edge(keyTail, node));
-            }
+            if (!_edges.ContainsKey(c)) _edges.Add(c, new Edge(keyTail, node));
 
             // We have a partial match with an existing edge
             // And must split it
@@ -260,43 +262,14 @@ namespace AcTrie
             }
 
             foreach (var (_, target) in _edges.Values)
-            {
-                foreach (var leaf in target.Leaves())
-                {
-                    yield return leaf;
-                }
-            }
-        }
-
-
-        public IEnumerator<KeyValuePair<string, TValue>> GetEnumerator()
-        {
-            foreach (var (c, (keyTail, target)) in _edges)
-            {
-                var head = $"{c}{keyTail}";
-                if (target.Value is not null)
-                {
-                    yield return new KeyValuePair<string, TValue>(head, (TValue) target.Value);
-                }
-
-                foreach (var (name, value) in target)
-                {
-                    yield return new KeyValuePair<string, TValue>($"{head}{name}", value);
-                }
-            }
-        }
-
-        IEnumerator IEnumerable.GetEnumerator()
-        {
-            return GetEnumerator();
+            foreach (var leaf in target.Leaves())
+                yield return leaf;
         }
 
         private void Split(char c, string rest, Trie<TValue> node)
         {
             if (!_edges.TryGetValue(c, out var edge))
-            {
                 throw new ArgumentException($"attempting to split undefined edge {c}");
-            }
 
             // Look up the edge we're colliding with
             var (splitKey, currentNode) = edge;
@@ -308,10 +281,7 @@ namespace AcTrie
             var matchLength = 0;
             for (var i = 0; i < Math.Min(oldLength, newLength); i++)
             {
-                if (rest[i] != splitKey[i])
-                {
-                    break;
-                }
+                if (rest[i] != splitKey[i]) break;
 
                 matchLength++;
             }
@@ -352,10 +322,7 @@ namespace AcTrie
 
         private static IList<Step> Trim(IList<Step> path)
         {
-            if (path.Count <= 0)
-            {
-                throw new ArgumentException("attempted to trim empty path");
-            }
+            if (path.Count <= 0) throw new ArgumentException("attempted to trim empty path");
 
             // Pull out the parent of the removed node
             var (remainder, target) = path[^1];
@@ -395,31 +362,19 @@ namespace AcTrie
 
         private static void Compress(IList<Step> path)
         {
-            if (path.Count <= 0)
-            {
-                throw new ArgumentException("attempted to compress empty path");
-            }
+            if (path.Count <= 0) throw new ArgumentException("attempted to compress empty path");
 
             var (key, node) = path[^1];
             path.RemoveAt(path.Count - 1);
 
             var toCompress = new List<Step>();
             foreach (var x in path.Reverse())
-            {
                 if (x.Target.Value is null && x.Target._edges.Count == 1)
-                {
                     toCompress.Add(x);
-                }
                 else
-                {
                     break;
-                }
-            }
 
-            if (toCompress.Count <= 0)
-            {
-                return;
-            }
+            if (toCompress.Count <= 0) return;
 
             var (edgeFromParent, parent) = toCompress[^1];
             path.RemoveAt(path.Count - 1);
@@ -434,11 +389,6 @@ namespace AcTrie
             parent.AddChild(newKey, node);
         }
 
-        // Helper classes
-        private record Edge(string KeyTail, Trie<TValue> Target);
-
-        private record Step(string Remainder, Trie<TValue> Target);
-
         private IEnumerable<Step> WalkPath(string key)
         {
             var step = new Step(key, this);
@@ -452,13 +402,15 @@ namespace AcTrie
                 step = step.Target.GetChild(step.Remainder);
 
                 // We have run out of matching nodes
-                if (step is null)
-                {
-                    yield break;
-                }
+                if (step is null) yield break;
 
                 yield return step;
             }
         }
+
+        // Helper classes
+        private record Edge(string KeyTail, Trie<TValue> Target);
+
+        private record Step(string Remainder, Trie<TValue> Target);
     }
 }
