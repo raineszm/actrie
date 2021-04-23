@@ -53,7 +53,7 @@ namespace AcTrie
                 return;
             }
 
-            var child = Children[keyList.First()];
+            Children.TryGetValue(keyList.First(), out var child);
             // If no matching child, create it
             if (child is null)
             {

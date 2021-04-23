@@ -232,9 +232,10 @@ namespace AcTrie
                         shift += shiftAdd;
                     }
 
+                    target.Children.TryGetValue(k, out var node);
                     child.Suffix = new AcNode<TToken, TValue>.SuffixEdge
                     {
-                        Node = target.Children[k] ?? Root,
+                        Node = node ?? Root,
                         Shift = shift
                     };
                 }
