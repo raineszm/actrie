@@ -11,6 +11,8 @@
     <Description>A minimal implemenation of an Aho-Corasick trie.</Description>
     <RepositoryUrl>https://github.com/raineszm/actrie</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
+    <Title>AcTrie</Title>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
   </PropertyGroup>
 
 <ItemGroup>
