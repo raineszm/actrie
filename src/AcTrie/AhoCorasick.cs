@@ -74,8 +74,6 @@ public class AhoCorasick<TToken, TValue> : IDictionary<IEnumerable<TToken>, TVal
     public ICollection<TValue> Values => _root.Values;
 
 
-    public IEnumerable<AcNode<TToken, TValue>> Leaves() { return _root.Nodes().Where(node => node.IsLeaf); }
-
     public IEnumerable<Needle> Search(IEnumerable<TToken> haystack)
     {
         Lock();
@@ -183,7 +181,7 @@ public class AhoCorasick<TToken, TValue> : IDictionary<IEnumerable<TToken>, TVal
         return match;
     }
 
-    public void Lock()
+    private void Lock()
     {
         if (!_modified) return;
         ComputeSuffixes();
@@ -229,6 +227,6 @@ public class AhoCorasick<TToken, TValue> : IDictionary<IEnumerable<TToken>, TVal
     {
         public int End;
         public int Start;
-        public TValue Value;
+        public required TValue Value;
     }
 }

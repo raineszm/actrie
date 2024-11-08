@@ -6,7 +6,7 @@ using System.Linq;
 
 namespace AcTrie;
 
-public class AcNode<TToken, TValue> : IDictionary<IEnumerable<TToken>, TValue>
+internal class AcNode<TToken, TValue> : IDictionary<IEnumerable<TToken>, TValue>
     where TToken : notnull
 {
     public readonly IDictionary<TToken, AcNode<TToken, TValue>>
