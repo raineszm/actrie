@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.1] - 2024-11-08
+
+### Fixed
+
+- Fixed a bug in `AhoCorasick` that would cause errors when using `ContainsKey` or `TryGetValue` when the key did not exist in the Trie.
+
 ## [0.2.0] - 2024-11-08
 
 ### Added
@@ -26,6 +32,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `Trie` class which implements dictionary interface and allows finding longest prefixes
 - `ACTrie` class which implements an Aho-Corasick automaton
 
-[unreleased]: https://github.com/raineszm/actrie/compare/0.2.0...HEAD
-[0.2.0]: https://github.com/raineszm/actrie/releases/tag/0.2.0
+[unreleased]: https://github.com/raineszm/actrie/compare/0.2.1...HEAD
+[0.2.0]: https://github.com/raineszm/actrie/releases/tag/0.1.0...0.2.0
 [0.1.0]: https://github.com/raineszm/actrie/releases/tag/0.1.0
