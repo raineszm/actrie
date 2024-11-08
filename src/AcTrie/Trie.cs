@@ -8,13 +8,13 @@ namespace AcTrie;
 
 public class Trie<TValue> : IDictionary<string, TValue>
 {
-    private readonly IDictionary<char, Edge> _edges = new Dictionary<char, Edge>();
+    private readonly Dictionary<char, Edge> _edges = new();
 
     public Trie() { }
 
     private Trie(TValue value) { Value = value; }
 
-    public Option<TValue> Value { get; set; }
+    public Option<TValue> Value { get; private set; }
 
     public bool IsReadOnly => false;
 
@@ -111,7 +111,7 @@ public class Trie<TValue> : IDictionary<string, TValue>
 
     IEnumerator IEnumerable.GetEnumerator() { return GetEnumerator(); }
 
-    public bool RemoveImpl(string key, Option<TValue> value = default)
+    private bool RemoveImpl(string key, Option<TValue> value = default)
     {
         if (key.Length == 0) return false;
         IList<Step> path = WalkPath(key).ToList();
@@ -181,13 +181,13 @@ public class Trie<TValue> : IDictionary<string, TValue>
 
         // Strip off the consumed characters and return remaining key
         // and matched node
-        return new Step(key.Substring(i + 1), edge.Target);
+        return new Step(key[(i + 1)..], edge.Target);
     }
 
-    protected void AddChild(string key, Trie<TValue> node)
+    private void AddChild(string key, Trie<TValue> node)
     {
         var c = key[0];
-        var keyTail = key.Substring(1);
+        var keyTail = key[1..];
 
         if (!_edges.ContainsKey(c)) _edges.Add(c, new Edge(keyTail, node));
 
@@ -196,15 +196,15 @@ public class Trie<TValue> : IDictionary<string, TValue>
         Split(c, keyTail, node);
     }
 
-    protected bool RemoveChild(string key)
+    private bool RemoveChild(string key)
     {
         var c = key[0];
-        var rest = key.Substring(1);
+        var rest = key[1..];
 
         if (!_edges.TryGetValue(c, out var edge)) return false;
 
         var (keyTail, target) = edge;
-        if (rest.Substring(0, keyTail.Length) != keyTail) return false;
+        if (rest[..keyTail.Length] != keyTail) return false;
 
         _edges.Remove(c);
 
@@ -287,7 +287,7 @@ public class Trie<TValue> : IDictionary<string, TValue>
         newNode.AddChild(splitKey.Substring(matchLength), currentNode);
         newNode.AddChild(rest.Substring(matchLength), node);
         _edges[c] = new Edge(
-            splitKey.Substring(0, matchLength),
+            splitKey[..matchLength],
             newNode
         );
     }
