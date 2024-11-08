@@ -51,7 +51,7 @@ public class TrieTest : AbstractTrieTest
                 var (text, i) = t;
                 var trie = new Trie<int>
                 {
-                    [text.Substring(0, i)] = value,
+                    [text[..i]] = value,
                 };
                 var result = trie.ConsumeLongestPrefix(text);
                 result?.Value.Should().Be(value);
