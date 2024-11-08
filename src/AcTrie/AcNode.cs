@@ -174,7 +174,7 @@ internal class AcNode<TToken, TValue> : IDictionary<IEnumerable<TToken>, TValue>
         yield return this;
         if (!key.Any()) yield break;
 
-        var child = Children[key[0]];
+        if (!Children.TryGetValue(key[0], out var child)) yield break;
 
         foreach (var node in child.IterPath(key.Skip(1).ToList()))
             yield return node;

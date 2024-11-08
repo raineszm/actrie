@@ -91,4 +91,33 @@ public class AhoCorasickTest
                 }
             );
     }
+
+    [Fact]
+    public void ContainsKey_GivenExistingKey_ReturnsTrue()
+    {
+        var trie = new AhoCorasick<char, int> { { "at", 0 } };
+        trie.ContainsKey("at").Should().BeTrue();
+    }
+
+
+    [Fact]
+    public void ContainsKey_GivenNonexistentKey_ReturnsFalse()
+    {
+        var trie = new AhoCorasick<char, int> { { "at", 0 } };
+        trie.ContainsKey("ab").Should().BeFalse();
+    }
+
+    [Fact]
+    public void TryAdd_GivenNewKey_ReturnsTrue()
+    {
+        var trie = new AhoCorasick<char, int>();
+        trie.TryAdd("at", 0).Should().BeTrue();
+    }
+
+    [Fact]
+    public void TryAdd_GivenExistingKey_ReturnsFalse()
+    {
+        var trie = new AhoCorasick<char, int> { { "at", 0 } };
+        trie.TryAdd("at", 1).Should().BeFalse();
+    }
 }
