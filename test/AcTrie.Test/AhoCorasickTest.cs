@@ -2,16 +2,19 @@ using System;
 using System.Collections.Generic;
 using FluentAssertions;
 using Xunit;
-using CITrie = AcTrie.AcTrie<char, int>;
-using CINeedle = AcTrie.AcTrie<char, int>.Needle;
+using CITrie = AcTrie.AhoCorasick<char, int>;
+using CINeedle = AcTrie.AhoCorasick<char, int>.Needle;
 
 namespace AcTrie.Test;
 
-public class AcTrieTest
+public class AhoCorasickTest
 {
-    public readonly AcTrie<char, int> SoarAcTrie;
+    public readonly AhoCorasick<char, int> SoarAhoCorasick;
 
-    public AcTrieTest() { SoarAcTrie = new CITrie { { "at", 0 }, { "art", 1 }, { "oars", 2 }, { "soar", 3 } }; }
+    public AhoCorasickTest()
+    {
+        SoarAhoCorasick = new CITrie { { "at", 0 }, { "art", 1 }, { "oars", 2 }, { "soar", 3 } };
+    }
 
     public static IEnumerable<object[]> SearchData()
     {
@@ -54,7 +57,7 @@ public class AcTrieTest
     [MemberData(nameof(SearchData))]
     public void Search_GivenAString_ReturnsAllMatchingSubstrings(string str, CINeedle[] matches)
     {
-        SoarAcTrie.Search(str).Should().BeEquivalentTo(matches);
+        SoarAhoCorasick.Search(str).Should().BeEquivalentTo(matches);
     }
 
     public static IEnumerable<object[]> LongestMatchData()
@@ -70,13 +73,13 @@ public class AcTrieTest
     [MemberData(nameof(LongestMatchData))]
     public void LongestMatch_GivenString_ReturnsLongestMatch(string str, CINeedle match)
     {
-        SoarAcTrie.LongestMatch(str).Should().Be(match);
+        SoarAhoCorasick.LongestMatch(str).Should().Be(match);
     }
 
     [Fact]
     public void LongestMatch_GivenConflictingPrefixMatchs_ReturnsLongest()
     {
-        var trie = new AcTrie<char, int> { { "point", 1 }, { "conduct", 2 } };
+        var trie = new AhoCorasick<char, int> { { "point", 1 }, { "conduct", 2 } };
         trie.LongestMatch("pconduct")
             .Should()
             .Be(

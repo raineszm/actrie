@@ -5,7 +5,7 @@ using System.Linq;
 
 namespace AcTrie;
 
-public class AcTrie<TToken, TValue> : IDictionary<IEnumerable<TToken>, TValue>
+public class AhoCorasick<TToken, TValue> : IDictionary<IEnumerable<TToken>, TValue>
     where TToken : notnull
 {
     private readonly AcNode<TToken, TValue> _root = new();
