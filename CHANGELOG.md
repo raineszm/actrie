@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2024-11-08
+
 ### Added
 
 - Added a changelog
@@ -25,4 +27,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `ACTrie` class which implements an Aho-Corasick automaton
 
 [unreleased]: https://github.com/raineszm/actrie/compare/0.2.0...HEAD
+[0.2.0]: https://github.com/raineszm/actrie/releases/tag/0.2.0
 [0.1.0]: https://github.com/raineszm/actrie/releases/tag/0.1.0
