@@ -7,14 +7,16 @@ as well as a simple implementation of a compressed radix trie.
 
 ### Trie
 
-The `Trie` module defines a compressed radix tree mapping string keys to a generic value. This class implements the `IDictionary<string, TValue>` interface. Additionally it implements the `ConsumeLongestPrefix` method, which returns the value corresponding to the key matching the longest prefix as well as the remaining text.
+The `Trie` module defines a compressed radix tree mapping string keys to a generic value. This class implements the
+`IDictionary<string, TValue>` interface. Additionally it implements the `ConsumeLongestPrefix` method, which returns the
+value corresponding to the key matching the longest prefix as well as the remaining text.
 
 ### AcTrie
 
 The `AcTrie` module defines an `AcTrie` class implementing the `IDictionary` interface, generic over the key and value.
-Additionally `AcTrie` implements an [Aho-Corasick](https://en.wikipedia.org/wiki/Aho%E2%80%93Corasick_algorithm) state machine.
+Additionally `AcTrie` implements an [Aho-Corasick](https://en.wikipedia.org/wiki/Aho%E2%80%93Corasick_algorithm) state
+machine.
 This functionality is used to provide the `Search` and `LongestMatch` methods.
-
 
 ## Contributing
 

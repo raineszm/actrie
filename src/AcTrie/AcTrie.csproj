@@ -1,21 +1,21 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFramework>net7.0</TargetFramework>
-    <Nullable>enable</Nullable>
-    <LangVersion>11</LangVersion>
-    <PackageId>AcTrie</PackageId>
-    <Version>0.1.0</Version>
-    <Authors>Zach Raines</Authors>
-    <PackageReadmeFile>README.md</PackageReadmeFile>
-    <Description>A minimal implemenation of an Aho-Corasick trie.</Description>
-    <RepositoryUrl>https://github.com/raineszm/actrie</RepositoryUrl>
-    <RepositoryType>git</RepositoryType>
-    <Title>AcTrie</Title>
-    <PackageLicenseExpression>MIT</PackageLicenseExpression>
-  </PropertyGroup>
+    <PropertyGroup>
+        <TargetFramework>net7.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <LangVersion>11</LangVersion>
+        <PackageId>AcTrie</PackageId>
+        <Version>0.1.0</Version>
+        <Authors>Zach Raines</Authors>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+        <Description>A minimal implemenation of an Aho-Corasick trie.</Description>
+        <RepositoryUrl>https://github.com/raineszm/actrie</RepositoryUrl>
+        <RepositoryType>git</RepositoryType>
+        <Title>AcTrie</Title>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    </PropertyGroup>
 
-<ItemGroup>
-        <None Include="..\..\README.md" Pack="true" PackagePath="\" />
+    <ItemGroup>
+        <None Include="..\..\README.md" Pack="true" PackagePath="\"/>
     </ItemGroup>
 </Project>
