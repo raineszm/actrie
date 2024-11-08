@@ -10,19 +10,18 @@ public class TrieTest : AbstractTrieTest
     protected override IDictionary<string, int> Create() { return new Trie<int>(); }
 
     [Property]
-    public void ConsumeLongestPrefix_ForAnEmptyTrie_ReturnsOriginalString(NonEmptyString text)
+    public void ConsumeLongestPrefix_ForAnEmptyTrie_ReturnsNull(NonEmptyString text)
     {
         var trie = new Trie<int>();
-        var (value, remainder) = trie.ConsumeLongestPrefix(text.Get);
-        value.IsNone.Should().BeTrue();
-        remainder.Should().Be(text.Get);
+        var result = trie.ConsumeLongestPrefix(text.Get);
+        result.Should().BeNull();
     }
 
     [Property]
-    public Property ConsumeLongestPrefix_WhenNoMatch_ReturnsOriginalString(NonEmptyString key, NonEmptyString text)
+    public Property ConsumeLongestPrefix_WhenNoMatch_ReturnsNull(NonEmptyString key, NonEmptyString text)
     {
         var trie = new Trie<int> { [key.Get] = 1 };
-        return (trie.ConsumeLongestPrefix(text.Get) == (default, text.Get)).When(key.Get != text.Get);
+        return (trie.ConsumeLongestPrefix(text.Get) is null).When(key.Get != text.Get);
     }
 
     [Property(Replay = "140881727,296846848")]
@@ -32,9 +31,9 @@ public class TrieTest : AbstractTrieTest
         {
             [text.Get] = 1,
         };
-        var (value, remainder) = trie.ConsumeLongestPrefix(text.Get);
-        value.Should().Be(new Option<int>(1));
-        remainder.Should().BeEmpty();
+        var result = trie.ConsumeLongestPrefix(text.Get);
+        result?.Value.Should().Be(1);
+        result?.Remainder.Should().BeEmpty();
     }
 
 
@@ -54,9 +53,9 @@ public class TrieTest : AbstractTrieTest
                 {
                     [text.Substring(0, i)] = value,
                 };
-                var (result, remainder) = trie.ConsumeLongestPrefix(text);
-                result.Should().Be(new Option<int>(value));
-                remainder.Should().Be(text[i..]);
+                var result = trie.ConsumeLongestPrefix(text);
+                result?.Value.Should().Be(value);
+                result?.Remainder.Should().Be(text[i..]);
             }
         );
     }

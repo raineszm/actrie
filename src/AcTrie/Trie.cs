@@ -14,7 +14,7 @@ public class Trie<TValue> : IDictionary<string, TValue>
 
     private Trie(TValue value) { Value = value; }
 
-    public Option<TValue> Value { get; private set; }
+    internal Option<TValue> Value { get; set; }
 
     public bool IsReadOnly => false;
 
@@ -146,7 +146,7 @@ public class Trie<TValue> : IDictionary<string, TValue>
         return result;
     }
 
-    public (Option<TValue>, string) ConsumeLongestPrefix(string key)
+    public Match? ConsumeLongestPrefix(string key)
     {
         var value = new Option<TValue>();
         var valueKey = key;
@@ -157,7 +157,7 @@ public class Trie<TValue> : IDictionary<string, TValue>
             valueKey = remainder;
         }
 
-        return (value, valueKey);
+        return value.TryGetValue(out var v) ? new Match(valueKey, v) : null;
     }
 
     private Step? GetChild(string key)
@@ -386,4 +386,6 @@ public class Trie<TValue> : IDictionary<string, TValue>
     private record Edge(string KeyTail, Trie<TValue> Target);
 
     private record Step(string Remainder, Trie<TValue> Target);
+
+    public record Match(string Remainder, TValue Value);
 }

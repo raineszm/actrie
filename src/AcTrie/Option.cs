@@ -2,7 +2,7 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace AcTrie;
 
-public readonly record struct Option<T>
+internal readonly record struct Option<T>
 {
     public Option() { }
 
