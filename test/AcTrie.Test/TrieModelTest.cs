@@ -176,7 +176,7 @@ namespace AcTrie.Test
 
             public override Property Post(Trie<int> trie, IDictionary<string, int> _)
             {
-                return trie.Leaves().All(x => x.Value is not null || x != trie).ToProperty();
+                return trie.Leaves().All(x => x.Value.IsSome || x != trie).ToProperty();
             }
 
             public override string ToString()

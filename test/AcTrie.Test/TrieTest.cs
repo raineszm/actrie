@@ -16,14 +16,16 @@ namespace AcTrie.Test
         public void ConsumeLongestPrefix_ForAnEmptyTrie_ReturnsOriginalString(NonEmptyString text)
         {
             var trie = new Trie<int>();
-            trie.ConsumeLongestPrefix(text.Get).Should().Be((null, text.Get));
+            var (value, remainder) = trie.ConsumeLongestPrefix(text.Get);
+            value.IsNone.Should().BeTrue();
+            remainder.Should().Be(text.Get);
         }
 
         [Property]
         public Property ConsumeLongestPrefix_WhenNoMatch_ReturnsOriginalString(NonEmptyString key, NonEmptyString text)
         {
             var trie = new Trie<int> {[key.Get] = 1};
-            return (trie.ConsumeLongestPrefix(text.Get) == (null, text.Get)).When(key.Get != text.Get);
+            return (trie.ConsumeLongestPrefix(text.Get) == (default, text.Get)).When(key.Get != text.Get);
         }
 
         [Property(Replay = "140881727,296846848")]
@@ -31,9 +33,11 @@ namespace AcTrie.Test
         {
             var trie = new Trie<int>
             {
-                [text.Get] = 1
+                [text.Get] = 1,
             };
-            trie.ConsumeLongestPrefix(text.Get).Should().Be((1, ""));
+            var (value, remainder) = trie.ConsumeLongestPrefix(text.Get);
+            value.Should().Be(new Option<int>(1));
+            remainder.Should().BeEmpty();
         }
         
         
@@ -51,7 +55,9 @@ namespace AcTrie.Test
                 {
                     [text.Substring(0, i)] = value
                 };
-                trie.ConsumeLongestPrefix(text).Should().Be((value, text.Substring(i)));
+                var (result, remainder) = trie.ConsumeLongestPrefix(text);
+                    result.Should().Be(new Option<int>(value));
+                    remainder.Should().Be(text[i..]);
             });
         }
 

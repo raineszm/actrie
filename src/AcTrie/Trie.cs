@@ -1,11 +1,12 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 
 namespace AcTrie
 {
-    public class Trie<TValue> : IDictionary<string, TValue> where TValue : struct
+    public class Trie<TValue> : IDictionary<string, TValue>
     {
         private readonly IDictionary<char, Edge> _edges = new Dictionary<char, Edge>();
 
@@ -13,26 +14,20 @@ namespace AcTrie
         {
         }
 
-        public Trie(TValue value)
+        private Trie(TValue value)
         {
             Value = value;
         }
 
-        public TValue? Value { get; set; }
+        public Option<TValue> Value { get; set; }
 
         public bool IsReadOnly => false;
 
-        public bool TryGetValue(string key, out TValue value)
+        public bool TryGetValue(string key, [MaybeNullWhen(returnValue: false)] out TValue value)
         {
             var node = FindNode(key);
-            if (node?.Value is not null)
-            {
-                value = (TValue) node.Value;
-                return true;
-            }
-
+            if (node is not null) return node.Value.TryGetValue(out value);
             value = default;
-
             return false;
         }
 
@@ -87,7 +82,7 @@ namespace AcTrie
             get
             {
                 var total = 0;
-                if (Value is not null) total++;
+                if (Value.IsSome) total++;
 
                 return total + _edges.Values.Sum(edge => edge.Target.Count);
             }
@@ -112,7 +107,7 @@ namespace AcTrie
         public bool Contains(KeyValuePair<string, TValue> item)
         {
             var node = FindNode(item.Key);
-            return node?.Value is not null && node.Value.Equals(item);
+            return node?.Value is {IsSome: true} some  && some.Value.Equals(item);
         }
 
         public void CopyTo(KeyValuePair<string, TValue>[] array, int arrayIndex)
@@ -126,8 +121,8 @@ namespace AcTrie
             foreach (var (c, (keyTail, target)) in _edges)
             {
                 var head = $"{c}{keyTail}";
-                if (target.Value is not null)
-                    yield return new KeyValuePair<string, TValue>(head, (TValue) target.Value);
+                if (target.Value.IsSome)
+                    yield return new KeyValuePair<string, TValue>(head, target.Value.Value);
 
                 foreach (var (name, value) in target)
                     yield return new KeyValuePair<string, TValue>($"{head}{name}", value);
@@ -139,7 +134,7 @@ namespace AcTrie
             return GetEnumerator();
         }
 
-        public bool RemoveImpl(string key, TValue? value = null)
+        public bool RemoveImpl(string key, Option<TValue> value = default)
         {
             if (key.Length == 0) return false;
             IList<Step> path = WalkPath(key).ToList();
@@ -153,11 +148,11 @@ namespace AcTrie
             if (remainder.Length > 0) return false;
 
             // There is no node with this key
-            if (target.Value is null) return false;
+            if (target.Value.IsNone) return false;
 
             // If we need to check value do that here
             // For the ICollection implementation
-            if (value is not null && !target.Value.Equals(value)) return false;
+            if (value.IsSome && !target.Value.Equals(value)) return false;
 
             // target is the node to be deleted
 
@@ -174,13 +169,13 @@ namespace AcTrie
             return result;
         }
 
-        public (TValue?, string) ConsumeLongestPrefix(string key)
+        public (Option<TValue>, string) ConsumeLongestPrefix(string key)
         {
-            TValue? value = null;
+            var value = new Option<TValue>();
             var valueKey = key;
             foreach (var (remainder, target) in WalkPath(key))
             {
-                if (target.Value is null) continue;
+                if (target.Value.IsNone) continue;
                 value = target.Value;
                 valueKey = remainder;
             }
@@ -341,7 +336,7 @@ namespace AcTrie
             while (
                 path.Count > 0 &&
                 target._edges.Count == 0 &&
-                target.Value is not null
+                target.Value.IsSome
             )
             {
                 var (edgeFromParent, parent) = path[^1];
@@ -369,7 +364,7 @@ namespace AcTrie
 
             var toCompress = new List<Step>();
             foreach (var x in path.Reverse())
-                if (x.Target.Value is null && x.Target._edges.Count == 1)
+                if (x.Target.Value.IsNone && x.Target._edges.Count == 1)
                     toCompress.Add(x);
                 else
                     break;
