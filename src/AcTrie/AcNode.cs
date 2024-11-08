@@ -1,12 +1,12 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 
 namespace AcTrie;
 
 public class AcNode<TToken, TValue> : IDictionary<IEnumerable<TToken>, TValue>
-    where TValue : struct
     where TToken : notnull
 {
     public readonly IDictionary<TToken, AcNode<TToken, TValue>>
@@ -14,19 +14,18 @@ public class AcNode<TToken, TValue> : IDictionary<IEnumerable<TToken>, TValue>
 
     public SuffixEdge? Suffix;
 
-    public TValue? Value;
+    public Option<TValue> Value;
     public bool IsLeaf => !Children.Any();
     public bool IsReadOnly => false;
 
-    public bool TryGetValue(IEnumerable<TToken> key, out TValue value)
+    public bool TryGetValue(IEnumerable<TToken> key, [MaybeNullWhen(false)] out TValue value)
     {
         value = default;
         var keyList = key.ToList();
         if (!keyList.Any()) return false;
         var node = IterPath(keyList.ToList()).Last();
-        if (node == this || node?.Value is null) return false;
-        value = (TValue)node.Value;
-        return true;
+        if (node == this || node is null) return false;
+        return node.Value.TryGetValue(out value);
     }
 
     public TValue this[IEnumerable<TToken> key]
@@ -75,7 +74,9 @@ public class AcNode<TToken, TValue> : IDictionary<IEnumerable<TToken>, TValue>
 
     public bool Contains(KeyValuePair<IEnumerable<TToken>, TValue> item)
     {
-        return TryGetValue(item.Key, out var value) && item.Value.Equals(value);
+        return TryGetValue(item.Key, out var value)
+               && item.Value is not null
+               && item.Value.Equals(value);
     }
 
 
@@ -84,7 +85,7 @@ public class AcNode<TToken, TValue> : IDictionary<IEnumerable<TToken>, TValue>
         get
         {
             var total = 0;
-            if (Value is not null) total++;
+            if (Value.IsSome) total++;
 
             return total + Children.Values.Sum(child => child.Count);
         }
@@ -93,14 +94,14 @@ public class AcNode<TToken, TValue> : IDictionary<IEnumerable<TToken>, TValue>
 
     public void Clear()
     {
-        Value = null;
+        Value = new Option<TValue>();
         Children.Clear();
     }
 
     public IEnumerator<KeyValuePair<IEnumerable<TToken>, TValue>> GetEnumerator()
     {
-        if (Value is not null)
-            yield return new KeyValuePair<IEnumerable<TToken>, TValue>(Array.Empty<TToken>(), (TValue)Value);
+        if (Value.IsSome)
+            yield return new KeyValuePair<IEnumerable<TToken>, TValue>(Array.Empty<TToken>(), Value.Value);
 
         foreach (var (c, child) in Children)
         foreach (var (k, v) in child)
@@ -123,7 +124,7 @@ public class AcNode<TToken, TValue> : IDictionary<IEnumerable<TToken>, TValue>
     public ICollection<IEnumerable<TToken>> Keys => this.Select(kv => kv.Key).ToList();
     public ICollection<TValue> Values => this.Select(kv => kv.Value).ToList();
 
-    private bool RemoveImpl(IEnumerable<TToken> key, TValue? value = null)
+    private bool RemoveImpl(IEnumerable<TToken> key, Option<TValue> value = default)
     {
         var keyList = key.ToList();
 
@@ -137,7 +138,7 @@ public class AcNode<TToken, TValue> : IDictionary<IEnumerable<TToken>, TValue>
         if (target?.Value is null) return false;
 
 
-        if (value is not null && !value.Equals(target.Value)) return false;
+        if (value.IsSome && !value.Equals(target.Value)) return false;
 
         TrimNodes(keyList, nodes);
 
@@ -153,7 +154,7 @@ public class AcNode<TToken, TValue> : IDictionary<IEnumerable<TToken>, TValue>
 
             var edge = keyList[i];
             parent.Children.Remove(edge);
-            if (parent.Children.Count > 0 || parent.Value is not null) break;
+            if (parent.Children.Count > 0 || parent.Value.IsSome) break;
         }
     }
 
@@ -174,16 +175,14 @@ public class AcNode<TToken, TValue> : IDictionary<IEnumerable<TToken>, TValue>
         if (!key.Any()) yield break;
 
         var child = Children[key[0]];
-        if (child is not null)
-            foreach (var node in child.IterPath(key.Skip(1).ToList()))
-                yield return node;
-        else
-            yield return null;
+
+        foreach (var node in child.IterPath(key.Skip(1).ToList()))
+            yield return node;
     }
 
     public record SuffixEdge
     {
-        public AcNode<TToken, TValue> Node;
+        public required AcNode<TToken, TValue> Node;
         public int Shift;
     }
 }

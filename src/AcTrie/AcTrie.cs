@@ -1,77 +1,80 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 
 namespace AcTrie;
 
 public class AcTrie<TToken, TValue> : IDictionary<IEnumerable<TToken>, TValue>
-    where TValue : struct
     where TToken : notnull
 {
-    public bool Modified = true;
-    public AcNode<TToken, TValue> Root = new();
+    private readonly AcNode<TToken, TValue> _root = new();
+    private bool _modified = true;
 
     IEnumerator<KeyValuePair<IEnumerable<TToken>, TValue>> IEnumerable<KeyValuePair<IEnumerable<TToken>, TValue>>.
         GetEnumerator()
     {
-        return Root.GetEnumerator();
+        return _root.GetEnumerator();
     }
 
-    public IEnumerator GetEnumerator() { return ((IEnumerable)Root).GetEnumerator(); }
+    public IEnumerator GetEnumerator() { return ((IEnumerable)_root).GetEnumerator(); }
 
     public void Add(KeyValuePair<IEnumerable<TToken>, TValue> item)
     {
-        Root.Add(item);
-        Modified = true;
+        _root.Add(item);
+        _modified = true;
     }
 
     public void Clear()
     {
-        Root.Clear();
-        Modified = true;
+        _root.Clear();
+        _modified = true;
     }
 
-    public bool Contains(KeyValuePair<IEnumerable<TToken>, TValue> item) { return Root.Contains(item); }
+    public bool Contains(KeyValuePair<IEnumerable<TToken>, TValue> item) { return _root.Contains(item); }
 
     public void CopyTo(KeyValuePair<IEnumerable<TToken>, TValue>[] array, int arrayIndex)
     {
-        Root.CopyTo(array, arrayIndex);
+        _root.CopyTo(array, arrayIndex);
     }
 
-    public bool Remove(KeyValuePair<IEnumerable<TToken>, TValue> item) { return Modified = Root.Remove(item); }
+    public bool Remove(KeyValuePair<IEnumerable<TToken>, TValue> item) { return _modified = _root.Remove(item); }
 
-    public int Count => Root.Count;
+    public int Count => _root.Count;
 
-    public bool IsReadOnly => Root.IsReadOnly;
+    public bool IsReadOnly => _root.IsReadOnly;
 
     public void Add(IEnumerable<TToken> key, TValue value)
     {
-        Root.Add(key, value);
-        Modified = true;
+        _root.Add(key, value);
+        _modified = true;
     }
 
-    public bool ContainsKey(IEnumerable<TToken> key) { return Root.ContainsKey(key); }
+    public bool ContainsKey(IEnumerable<TToken> key) { return _root.ContainsKey(key); }
 
-    public bool Remove(IEnumerable<TToken> key) { return Modified = Root.Remove(key); }
+    public bool Remove(IEnumerable<TToken> key) { return _modified = _root.Remove(key); }
 
-    public bool TryGetValue(IEnumerable<TToken> key, out TValue value) { return Root.TryGetValue(key, out value); }
+    public bool TryGetValue(IEnumerable<TToken> key, [MaybeNullWhen(false)] out TValue value)
+    {
+        return _root.TryGetValue(key, out value);
+    }
 
     public TValue this[IEnumerable<TToken> key]
     {
-        get => Root[key];
+        get => _root[key];
         set
         {
-            Root[key] = value;
-            Modified = true;
+            _root[key] = value;
+            _modified = true;
         }
     }
 
-    public ICollection<IEnumerable<TToken>> Keys => Root.Keys;
+    public ICollection<IEnumerable<TToken>> Keys => _root.Keys;
 
-    public ICollection<TValue> Values => Root.Values;
+    public ICollection<TValue> Values => _root.Values;
 
 
-    public IEnumerable<AcNode<TToken, TValue>> Leaves() { return Root.Nodes().Where(node => node.IsLeaf); }
+    public IEnumerable<AcNode<TToken, TValue>> Leaves() { return _root.Nodes().Where(node => node.IsLeaf); }
 
     public IEnumerable<Needle> Search(IEnumerable<TToken> haystack)
     {
@@ -83,7 +86,7 @@ public class AcTrie<TToken, TValue> : IDictionary<IEnumerable<TToken>, TValue>
         // as a slice i.e. [start, end)
         var first = 0;
         var last = 0;
-        var node = Root;
+        var node = _root;
 
 
         var haystackList = haystack.ToList();
@@ -98,7 +101,7 @@ public class AcTrie<TToken, TValue> : IDictionary<IEnumerable<TToken>, TValue>
             // Fetch next unread key element
             var k = haystackList[last];
 
-            if (!Root.Children.ContainsKey(k))
+            if (!_root.Children.ContainsKey(k))
             {
                 last++;
                 first = last;
@@ -111,7 +114,7 @@ public class AcTrie<TToken, TValue> : IDictionary<IEnumerable<TToken>, TValue>
                 // while the next character matches
                 node = node.Children[k]; // fetch the matched node
 
-                if (node.Value is not null)
+                if (node.Value.TryGetValue(out var nodeValue))
                     // if that node has a value we have a new matching substring
                     // Note the indices here are of the form [start, end)
                     yield return new Needle
@@ -119,7 +122,7 @@ public class AcTrie<TToken, TValue> : IDictionary<IEnumerable<TToken>, TValue>
                         // Starting index, end_index, value
                         Start = first,
                         End = last + 1,
-                        Value = (TValue)node.Value,
+                        Value = nodeValue,
                     };
 
                 // If we've reached the end of the haystack
@@ -148,13 +151,13 @@ public class AcTrie<TToken, TValue> : IDictionary<IEnumerable<TToken>, TValue>
                 first += shift;
 
                 // If this node is a match, yield it
-                if (node.Value is not null)
+                if (node.Value.TryGetValue(out var nodeValue))
                     // Note inclusive form [start, end)
                     yield return new Needle
                     {
                         Start = first,
                         End = last + 1,
-                        Value = (TValue)node.Value,
+                        Value = nodeValue,
                     }; // Starting index, end_index, node
             }
 
@@ -182,23 +185,23 @@ public class AcTrie<TToken, TValue> : IDictionary<IEnumerable<TToken>, TValue>
 
     public void Lock()
     {
-        if (!Modified) return;
+        if (!_modified) return;
         ComputeSuffixes();
-        Modified = false;
+        _modified = false;
     }
 
     private void ComputeSuffixes()
     {
-        var nodeQueue = new Queue<AcNode<TToken, TValue>>(new[] { Root });
+        var nodeQueue = new Queue<AcNode<TToken, TValue>>(new[] { _root });
         while (nodeQueue.Any())
         {
             var parent = nodeQueue.Dequeue();
             foreach (var (k, child) in parent.Children)
             {
                 nodeQueue.Enqueue(child);
-                if (parent == Root)
+                if (parent == _root)
                 {
-                    child.Suffix = new AcNode<TToken, TValue>.SuffixEdge { Node = Root, Shift = 1 };
+                    child.Suffix = new AcNode<TToken, TValue>.SuffixEdge { Node = _root, Shift = 1 };
                     continue;
                 }
 
@@ -215,7 +218,7 @@ public class AcTrie<TToken, TValue> : IDictionary<IEnumerable<TToken>, TValue>
                 target.Children.TryGetValue(k, out var node);
                 child.Suffix = new AcNode<TToken, TValue>.SuffixEdge
                 {
-                    Node = node ?? Root,
+                    Node = node ?? _root,
                     Shift = shift,
                 };
             }
